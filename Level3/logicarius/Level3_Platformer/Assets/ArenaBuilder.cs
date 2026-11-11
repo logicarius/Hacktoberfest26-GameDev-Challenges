@@ -127,8 +127,9 @@ public class ArenaBuilder : MonoBehaviour {
         BuildGoal();
 
         Random.InitState(System.Environment.TickCount);    // pickups are different every run
-        Scatter(rockPrefab, rockCount, 0.35f);
-        Scatter(wormPrefab, wormCount, 0.3f);
+        Physics2D.SyncTransforms();                        // so the pickup checks can see every block
+        Scatter(rockPrefab, rockCount, 0.4f);
+        Scatter(wormPrefab, wormCount, 0.4f);
         PlaceHearts();
 
         PlacePlayer();
@@ -398,7 +399,18 @@ public class ArenaBuilder : MonoBehaviour {
     }
 
     // ---------- pickups ----------
+    // true if a solid block is at this spot (a rock inside a hurdle can never be picked up)
+    bool InsideSolid(Vector2 p) {
+        foreach (Collider2D c in Physics2D.OverlapCircleAll(p, 0.3f)) {
+            if (c.isTrigger) continue;
+            if (c.GetComponentInParent<PlayerLife>() != null) continue;
+            return true;
+        }
+        return false;
+    }
+
     bool BlockedList(Vector2 p) {
+        if (InsideSolid(p)) return true;
         if (p.x < 7f && p.y < 3f) return true;                  // not on the start spot
         foreach (Vector2 h in hazardSpots) if ((h - p).sqrMagnitude < 2.6f) return true;
         foreach (Vector2 q in pickupSpots) if ((q - p).sqrMagnitude < 2.6f) return true;
@@ -406,6 +418,7 @@ public class ArenaBuilder : MonoBehaviour {
     }
 
     bool BlockedLive(Vector2 p) {
+        if (InsideSolid(p)) return true;
         foreach (Collider2D c in Physics2D.OverlapCircleAll(p, 0.9f)) {
             if (c.GetComponent<Hazard>() != null || c.GetComponent<Collectible>() != null) return true;
         }

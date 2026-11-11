@@ -221,6 +221,8 @@ public class PlayerHealth : MonoBehaviour {
         bool full = have >= max;
         Label(new Rect(x + max * (u * 1.05f) + pad, y2, u * 4f, u), full ? "FULL: eat worms!" : "Rocks " + have + "/" + max, Mathf.RoundToInt(u * 0.55f), TextAnchor.MiddleLeft, full ? new Color(1f, 0.9f, 0.3f, 1f) : Color.white);
 
+        Label(new Rect(panel.x, panel.yMax + 4f, w, u * 0.7f), "S / Down: drop through steps", Mathf.RoundToInt(u * 0.45f), TextAnchor.MiddleLeft, new Color(1f, 1f, 1f, 0.75f));
+
         // score
         int score = (stats != null) ? stats.Score : 0;
         Label(new Rect(x, y2 + u * 1.15f, w - pad * 2f, u * 0.9f), "SCORE  " + score, Mathf.RoundToInt(u * 0.8f), TextAnchor.MiddleLeft, new Color(1f, 0.85f, 0.25f, 1f));
