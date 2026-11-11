@@ -11,12 +11,14 @@ public class ArenaBuilder : MonoBehaviour {
     [Header("Size")]
     public float arenaWidth = 110f;
     public int floors = 6;
+    public float cameraSize = 6.5f;        // how much of the world you see (bigger = see more)
 
     [Header("Randomness")]
     public int layoutSeed = 11;            // same layout every run. Set 0 for a new layout every run
     public int rockCount = 12;
     public int wormCount = 30;
     public int heartPickups = 3;
+    public int starCount = 160;
 
     [Header("Art (filled in automatically in the editor)")]
     public Sprite fireSprite;
@@ -26,38 +28,35 @@ public class ArenaBuilder : MonoBehaviour {
     public GameObject wormPrefab;
     public bool clearOldLevel = true;      // removes the hand-made Ground, Steps, fire, rocks and worms
 
+    // Dark sky + bright blocks with a black outline: every platform is easy to see.
+    // Each floor has a bright floor colour and a clearly different colour for its steps, hurdles and platforms.
     [Header("Colours")]
-    // every floor gets its own set: floor body, bright top strip, and block colour (steps, hurdles, platforms)
     public Color[] floorPalette = {
-        new Color(0.40f, 0.20f, 0.60f, 1f),   // plum
-        new Color(0.70f, 0.18f, 0.45f, 1f),   // rose
-        new Color(0.32f, 0.26f, 0.72f, 1f),   // violet
-        new Color(0.62f, 0.14f, 0.62f, 1f),   // magenta
-        new Color(0.17f, 0.32f, 0.65f, 1f),   // cobalt
-        new Color(0.50f, 0.22f, 0.70f, 1f) }; // grape
-    public Color[] topPalette = {
-        new Color(1.00f, 0.50f, 0.75f, 1f),   // bubblegum
-        new Color(1.00f, 0.92f, 0.40f, 1f),   // lemon
-        new Color(0.60f, 1.00f, 0.45f, 1f),   // lime
-        new Color(0.35f, 0.95f, 0.90f, 1f),   // aqua
-        new Color(1.00f, 0.70f, 0.50f, 1f),   // peach
-        new Color(0.50f, 1.00f, 0.75f, 1f) }; // mint
+        new Color(1.00f, 0.80f, 0.20f, 1f),   // sunflower
+        new Color(1.00f, 0.42f, 0.70f, 1f),   // hot pink
+        new Color(0.62f, 0.92f, 0.28f, 1f),   // lime
+        new Color(0.70f, 0.52f, 1.00f, 1f),   // lavender
+        new Color(0.95f, 0.35f, 0.90f, 1f),   // magenta
+        new Color(0.92f, 0.95f, 1.00f, 1f) }; // ice white
     public Color[] blockPalette = {
-        new Color(1.00f, 0.78f, 0.30f, 1f),   // gold
-        new Color(0.30f, 0.85f, 0.80f, 1f),   // turquoise
-        new Color(0.80f, 0.60f, 1.00f, 1f),   // lilac
-        new Color(1.00f, 0.55f, 0.60f, 1f),   // coral pink
-        new Color(0.60f, 0.90f, 0.40f, 1f),   // lime
-        new Color(1.00f, 0.65f, 0.25f, 1f) }; // orange
-    public Color trapdoorColor = new Color(1.00f, 0.94f, 0.78f, 1f);    // cream: "jump through me"
-    public Color wallColor = new Color(0.16f, 0.07f, 0.30f, 1f);
-    public Color[] skyStops = {                                         // sunset at the bottom, deep night at the top
-        new Color(1.00f, 0.78f, 0.62f, 1f),
-        new Color(0.97f, 0.52f, 0.72f, 1f),
-        new Color(0.55f, 0.32f, 0.82f, 1f),
-        new Color(0.16f, 0.09f, 0.38f, 1f) };
+        new Color(0.45f, 0.30f, 0.95f, 1f),   // purple
+        new Color(0.22f, 0.45f, 1.00f, 1f),   // blue
+        new Color(0.90f, 0.28f, 0.65f, 1f),   // berry
+        new Color(1.00f, 0.85f, 0.20f, 1f),   // yellow
+        new Color(0.55f, 0.90f, 0.25f, 1f),   // lime
+        new Color(1.00f, 0.40f, 0.70f, 1f) }; // pink
+    public Color outlineColor = new Color(0.04f, 0.03f, 0.10f, 1f);
+    public float outlineSize = 0.09f;
+    public Color trapdoorColor = new Color(0.30f, 0.92f, 0.88f, 1f);    // aqua: "jump up through me"
+    public Color wallColor = new Color(0.28f, 0.20f, 0.50f, 1f);
+    public Color undergroundColor = new Color(0.08f, 0.06f, 0.16f, 1f);
+    public Color[] skyStops = {                                         // deep blue at the bottom, violet higher up, near black at the top
+        new Color(0.10f, 0.17f, 0.40f, 1f),
+        new Color(0.19f, 0.13f, 0.48f, 1f),
+        new Color(0.30f, 0.10f, 0.42f, 1f),
+        new Color(0.07f, 0.05f, 0.20f, 1f) };
 
-    Color curFloor, curTop, curBlock;
+    Color curFloor, curBlock;
 
     struct Surface { public float left, right, top; }
     readonly List<Surface> surfaces = new List<Surface>();
@@ -68,8 +67,8 @@ public class ArenaBuilder : MonoBehaviour {
     Sprite whiteSprite;
     Transform holder, player;
     Camera cam;
-    float jumpH = 1.7f, stepRise = 1.2f, hurdleH = 1f, floaterRise = 2.2f, tierHeight = 7.2f, ceilingY;
-    const float StairWidth = 11f, StepW = 2f, StepSpacing = 2.25f;
+    float jumpH = 1.7f, stepRise = 1.05f, hurdleH = 1f, floaterRise = 2f, tierHeight = 6.3f, ceilingY;
+    const float StairWidth = 11.4f, StepW = 1.8f, StepSpacing = 2.4f;   // 5 steps: 4 * 2.4 + 1.8 = 11.4
 
     // Makes sure the arena exists even if the Arena object was never added to the scene.
     // sceneLoaded also fires when the game reloads after WIN / GAME OVER, so the arena is rebuilt every time.
@@ -122,6 +121,7 @@ public class ArenaBuilder : MonoBehaviour {
         whiteSprite = Sprite.Create(t, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 1f);
 
         Random.InitState(layoutSeed != 0 ? layoutSeed : System.Environment.TickCount);
+        BuildBackdrop();
         BuildShell();
         BuildFloors();
         BuildGoal();
@@ -153,7 +153,7 @@ public class ArenaBuilder : MonoBehaviour {
             float g = Mathf.Abs(Physics2D.gravity.y) * (rb != null ? rb.gravityScale : 1f);
             if (g > 0.01f) jumpH = pm.jumpSpeed * pm.jumpSpeed / (2f * g);
         }
-        stepRise = Mathf.Min(1.3f, jumpH * 0.72f);          // every climb step is comfortably inside a normal jump
+        stepRise = Mathf.Min(1.2f, jumpH * 0.62f);          // every climb step is well inside a normal jump (easy climbing)
         hurdleH = Mathf.Min(1.1f, jumpH * 0.6f);
         floaterRise = hurdleH + stepRise * 0.95f;
         tierHeight = stepRise * 6f;                        // 5 steps + the final hop onto the next floor
@@ -161,11 +161,23 @@ public class ArenaBuilder : MonoBehaviour {
     }
 
     // ---------- building blocks ----------
-    GameObject MakeBlock(string name, float left, float right, float top, float thickness, Color color, bool grass) {
+    // a block with a dark outline behind it and (optionally) a lighter strip on top: easy to read against any background
+    GameObject MakeBlock(string name, float left, float right, float top, float thickness, Color color, bool strip) {
+        float cx = (left + right) / 2f, w = right - left, cy = top - thickness / 2f;
+
+        GameObject o = new GameObject(name + " Outline");
+        o.transform.SetParent(holder);
+        o.transform.position = new Vector3(cx, cy, 0f);
+        o.transform.localScale = new Vector3(w + outlineSize * 2f, thickness + outlineSize * 2f, 1f);
+        SpriteRenderer os = o.AddComponent<SpriteRenderer>();
+        os.sprite = whiteSprite;
+        os.color = outlineColor;
+        os.sortingOrder = -11;
+
         GameObject go = new GameObject(name);
         go.transform.SetParent(holder);
-        go.transform.position = new Vector3((left + right) / 2f, top - thickness / 2f, 0f);
-        go.transform.localScale = new Vector3(right - left, thickness, 1f);
+        go.transform.position = new Vector3(cx, cy, 0f);
+        go.transform.localScale = new Vector3(w, thickness, 1f);
         SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
         sr.sprite = whiteSprite;
         sr.color = color;
@@ -173,17 +185,29 @@ public class ArenaBuilder : MonoBehaviour {
         BoxCollider2D bc = go.AddComponent<BoxCollider2D>();
         bc.size = Vector2.one;
 
-        if (grass) {                                        // thin coloured strip on top: makes the path easy to read
+        if (strip) {                                        // light strip on top: shows exactly where you can stand
             GameObject g = new GameObject(name + " Top");
             g.transform.SetParent(holder);
-            g.transform.position = new Vector3((left + right) / 2f, top - 0.1f, 0f);
-            g.transform.localScale = new Vector3(right - left, 0.2f, 1f);
+            g.transform.position = new Vector3(cx, top - 0.1f, 0f);
+            g.transform.localScale = new Vector3(w, 0.2f, 1f);
             SpriteRenderer gs = g.AddComponent<SpriteRenderer>();
             gs.sprite = whiteSprite;
-            gs.color = curTop;
+            gs.color = Color.Lerp(color, Color.white, 0.6f);
             gs.sortingOrder = -9;
         }
         return go;
+    }
+
+    // a picture only (no collider)
+    void MakeDecor(string name, float cx, float cy, float w, float h, Color color, int order) {
+        GameObject go = new GameObject(name);
+        go.transform.SetParent(holder);
+        go.transform.position = new Vector3(cx, cy, 0f);
+        go.transform.localScale = new Vector3(w, h, 1f);
+        SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = whiteSprite;
+        sr.color = color;
+        sr.sortingOrder = order;
     }
 
     // a floor you can jump up through from below but can never fall through
@@ -236,9 +260,19 @@ public class ArenaBuilder : MonoBehaviour {
     }
 
     // ---------- the world ----------
+    // dark earth under the first floor and a field of stars behind everything
+    void BuildBackdrop() {
+        MakeDecor("Underground", arenaWidth / 2f, -5f, arenaWidth + 2f, 8f, undergroundColor, -12);
+        for (int i = 0; i < starCount; i++) {
+            float s = Random.Range(0.06f, 0.16f);
+            Color c = new Color(1f, 1f, 1f, Random.Range(0.3f, 0.9f));
+            MakeDecor("Star", Random.Range(0.5f, arenaWidth - 0.5f), Random.Range(0.5f, ceilingY), s, s, c, -20);
+        }
+    }
+
     void BuildShell() {
-        MakeBlock("Wall Left", -1f, 0f, ceilingY + 1f, ceilingY + 2f, wallColor, false);
-        MakeBlock("Wall Right", arenaWidth, arenaWidth + 1f, ceilingY + 1f, ceilingY + 2f, wallColor, false);
+        MakeBlock("Wall Left", -1f, 0f, ceilingY + 1f, ceilingY + 8f, wallColor, false);
+        MakeBlock("Wall Right", arenaWidth, arenaWidth + 1f, ceilingY + 1f, ceilingY + 8f, wallColor, false);
         MakeBlock("Ceiling", -1f, arenaWidth + 1f, ceilingY + 1f, 1f, wallColor, false);
     }
 
@@ -246,7 +280,6 @@ public class ArenaBuilder : MonoBehaviour {
         for (int k = 0; k < floors; k++) {
             float y = k * tierHeight;
             curFloor = floorPalette[k % floorPalette.Length];
-            curTop = topPalette[k % topPalette.Length];
             curBlock = blockPalette[k % blockPalette.Length];
             if (k == 0) {
                 MakeBlock("Floor 0", 0f, arenaWidth, y, 1f, curFloor, true);
@@ -281,7 +314,7 @@ public class ArenaBuilder : MonoBehaviour {
         for (int i = 1; i <= 5; i++) {
             float left = right ? hl + (5 - i) * StepSpacing : hl + (i - 1) * StepSpacing;
             float top = y + i * stepRise;
-            MakeBlock("Step", left, left + StepW, top, 0.5f, curBlock, false);
+            MakeBlock("Step", left, left + StepW, top, 0.5f, curBlock, true);
             surfaces.Add(new Surface { left = left, right = left + StepW, top = top });
         }
     }
@@ -455,11 +488,16 @@ public class ArenaBuilder : MonoBehaviour {
     void SetupCamera() {
         cam = Camera.main;
         CameraFollow cf = FindFirstObjectByType<CameraFollow>();
-        if (cf != null) cf.SetBounds(new Rect(0f, -1f, arenaWidth, ceilingY + 2f));
-        if (cam != null) cam.clearFlags = CameraClearFlags.SolidColor;
+        // the view can go 3 units below the first floor, so you always see the ground under you
+        if (cf != null) cf.SetBounds(new Rect(0f, -3f, arenaWidth, ceilingY + 5f));
+        if (cam != null) {
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.orthographic = true;
+            cam.orthographicSize = cameraSize;
+        }
     }
 
-    // the sky goes from day blue to night as you climb
+    // the sky goes from deep blue to violet to night as you climb
     void Update() {
         if (cam == null || player == null) return;
         float t = Mathf.Clamp01(player.position.y / Mathf.Max(1f, ceilingY - 9f)) * (skyStops.Length - 1);

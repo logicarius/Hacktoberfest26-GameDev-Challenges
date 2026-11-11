@@ -4,7 +4,7 @@ using UnityEngine;
 // and stays inside the arena (ArenaBuilder sets the bounds).
 public class CameraFollow : MonoBehaviour {
     public Transform target;                         // leave empty: it finds the chicken by itself
-    public Vector2 offset = new Vector2(3f, 2f);     // look this far ahead (x) and above (y)
+    public Vector2 lookAhead = new Vector2(3f, 0.8f); // look this far ahead (x) and above (y). Small y = you see more of the ground
     public float smoothTime = 0.18f;                 // lower = snappier, higher = floatier
 
     Rect bounds;
@@ -26,7 +26,7 @@ public class CameraFollow : MonoBehaviour {
     }
 
     Vector3 Goal() {
-        Vector3 g = new Vector3(target.position.x + offset.x * lookDir, target.position.y + offset.y, transform.position.z);
+        Vector3 g = new Vector3(target.position.x + lookAhead.x * lookDir, target.position.y + lookAhead.y, transform.position.z);
         if (useBounds && cam != null && cam.orthographic) {
             float hh = cam.orthographicSize, hw = hh * cam.aspect;
             g.x = (bounds.width <= 2f * hw) ? bounds.center.x : Mathf.Clamp(g.x, bounds.xMin + hw, bounds.xMax - hw);
