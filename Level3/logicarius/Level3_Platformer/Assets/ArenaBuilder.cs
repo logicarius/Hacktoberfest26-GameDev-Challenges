@@ -68,7 +68,7 @@ public class ArenaBuilder : MonoBehaviour {
     Transform holder, player;
     Camera cam;
     float jumpH = 1.7f, stepRise = 1.05f, hurdleH = 1f, floaterRise = 2f, tierHeight = 6.3f, ceilingY;
-    const float StairWidth = 11.4f, StepW = 1.8f, StepSpacing = 2.4f;   // 5 steps: 4 * 2.4 + 1.8 = 11.4
+    const float StairWidth = 11.4f, StepW = 2.6f, StepSpacing = 2.2f;   // 5 steps overlapping a little: 4 * 2.2 + 2.6 = 11.4
 
     // Makes sure the arena exists even if the Arena object was never added to the scene.
     // sceneLoaded also fires when the game reloads after WIN / GAME OVER, so the arena is rebuilt every time.
@@ -153,7 +153,7 @@ public class ArenaBuilder : MonoBehaviour {
             float g = Mathf.Abs(Physics2D.gravity.y) * (rb != null ? rb.gravityScale : 1f);
             if (g > 0.01f) jumpH = pm.jumpSpeed * pm.jumpSpeed / (2f * g);
         }
-        stepRise = Mathf.Min(1.2f, jumpH * 0.62f);          // every climb step is well inside a normal jump (easy climbing)
+        stepRise = Mathf.Min(1.0f, jumpH * 0.55f);          // every climb step is well inside a normal jump (easy climbing)
         hurdleH = Mathf.Min(1.1f, jumpH * 0.6f);
         floaterRise = hurdleH + stepRise * 0.95f;
         tierHeight = stepRise * 6f;                        // 5 steps + the final hop onto the next floor
@@ -212,13 +212,19 @@ public class ArenaBuilder : MonoBehaviour {
 
     // a floor you can jump up through from below but can never fall through
     void MakeTrapdoor(string name, float left, float right, float top) {
-        GameObject go = MakeBlock(name, left, right, top, 0.5f, trapdoorColor, false);
+        MakeOneWay(name, left, right, top, 0.5f, trapdoorColor, false);
+    }
+
+    // a platform you can jump up through from below and land on from above (used by the steps too)
+    GameObject MakeOneWay(string name, float left, float right, float top, float thickness, Color color, bool strip) {
+        GameObject go = MakeBlock(name, left, right, top, thickness, color, strip);
         go.GetComponent<BoxCollider2D>().usedByEffector = true;
         PlatformEffector2D eff = go.AddComponent<PlatformEffector2D>();
         eff.useOneWay = true;
         eff.surfaceArc = 170f;
         eff.useSideFriction = false;
         eff.useSideBounce = false;
+        return go;
     }
 
     GameObject MakeFireObject(float x, float topY) {
@@ -314,7 +320,7 @@ public class ArenaBuilder : MonoBehaviour {
         for (int i = 1; i <= 5; i++) {
             float left = right ? hl + (5 - i) * StepSpacing : hl + (i - 1) * StepSpacing;
             float top = y + i * stepRise;
-            MakeBlock("Step", left, left + StepW, top, 0.5f, curBlock, true);
+            MakeOneWay("Step", left, left + StepW, top, 0.5f, curBlock, true);
             surfaces.Add(new Surface { left = left, right = left + StepW, top = top });
         }
     }

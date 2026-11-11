@@ -28,6 +28,7 @@ public class PlayerHealth : MonoBehaviour {
     bool gameOver, won, restarting;
     float showAt, exitAt, winTime;
     GUIStyle bigStyle, smallStyle, hudStyle;
+    Sprite rockIcon;
 
     void Awake() {
         life = GetComponent<PlayerLife>();
@@ -156,29 +157,80 @@ public class PlayerHealth : MonoBehaviour {
         return (s / 60) + ":" + (s % 60).ToString("00");
     }
 
+    // ---------- HUD: one dark panel top-left with hearts, rocks, score and time ----------
+    Sprite RockIcon() {
+        if (rockIcon == null && rockPrefab != null) {
+            SpriteRenderer sr = rockPrefab.GetComponentInChildren<SpriteRenderer>();
+            if (sr != null) rockIcon = sr.sprite;
+        }
+        return rockIcon;
+    }
+
+    void Label(Rect r, string text, int size, TextAnchor anchor, Color c) {
+        if (hudStyle == null) hudStyle = new GUIStyle(GUI.skin.label);
+        hudStyle.fontSize = size;
+        hudStyle.alignment = anchor;
+        hudStyle.fontStyle = FontStyle.Bold;
+        hudStyle.normal.textColor = new Color(0f, 0f, 0f, 0.8f);          // shadow
+        GUI.Label(new Rect(r.x + 2f, r.y + 2f, r.width, r.height), text, hudStyle);
+        hudStyle.normal.textColor = c;
+        GUI.Label(r, text, hudStyle);
+    }
+
+    void DrawHud(float sw, float sh) {
+        float u = Mathf.Max(24f, sh * 0.05f);                 // one HUD unit
+        float pad = u * 0.3f, w = u * 8.2f, h = u * 3.4f;
+        Rect panel = new Rect(u * 0.4f, u * 0.4f, w, h);
+
+        GUI.color = new Color(0.03f, 0.02f, 0.10f, 0.82f);    // border + dark fill
+        GUI.DrawTexture(new Rect(panel.x - 3f, panel.y - 3f, panel.width + 6f, panel.height + 6f), Texture2D.whiteTexture);
+        GUI.color = new Color(0.12f, 0.09f, 0.28f, 0.95f);
+        GUI.DrawTexture(panel, Texture2D.whiteTexture);
+        GUI.color = Color.white;
+
+        float x = panel.x + pad, y = panel.y + pad;
+        int fs = Mathf.RoundToInt(u * 0.7f);
+
+        // hearts row
+        if (heartSprite != null) {
+            for (int i = 0; i < maxHearts; i++) {
+                GUI.color = (i < Hearts) ? Color.white : new Color(0f, 0f, 0f, 0.55f);
+                DrawSprite(heartSprite, new Rect(x + i * (u * 1.05f), y, u, u));
+            }
+            GUI.color = Color.white;
+        } else {
+            Label(new Rect(x, y, u * 6f, u), "Hearts " + Hearts + "/" + maxHearts, fs, TextAnchor.MiddleLeft, Color.white);
+        }
+
+        // time, right side of the first row
+        float shown = won ? winTime : Time.timeSinceLevelLoad;
+        Label(new Rect(panel.xMax - pad - u * 3.2f, y, u * 3.2f, u), Clock(shown), fs, TextAnchor.MiddleRight, new Color(0.7f, 0.95f, 1f, 1f));
+
+        // rocks row: three slots, filled as you pick them up
+        int max = (stats != null) ? stats.maxRocks : 3, have = (stats != null) ? stats.Rocks : 0;
+        float y2 = y + u * 1.15f;
+        Sprite rs = RockIcon();
+        for (int i = 0; i < max; i++) {
+            Rect slot = new Rect(x + i * (u * 1.05f), y2, u, u);
+            GUI.color = new Color(1f, 1f, 1f, 0.12f);
+            GUI.DrawTexture(slot, Texture2D.whiteTexture);
+            if (i < have && rs != null) { GUI.color = Color.white; DrawSprite(rs, slot); }
+            else if (i < have) { GUI.color = new Color(0.8f, 0.8f, 0.85f, 1f); GUI.DrawTexture(new Rect(slot.x + u * 0.2f, slot.y + u * 0.2f, u * 0.6f, u * 0.6f), Texture2D.whiteTexture); }
+        }
+        GUI.color = Color.white;
+        bool full = have >= max;
+        Label(new Rect(x + max * (u * 1.05f) + pad, y2, u * 4f, u), full ? "FULL: eat worms!" : "Rocks " + have + "/" + max, Mathf.RoundToInt(u * 0.55f), TextAnchor.MiddleLeft, full ? new Color(1f, 0.9f, 0.3f, 1f) : Color.white);
+
+        // score
+        int score = (stats != null) ? stats.Score : 0;
+        Label(new Rect(x, y2 + u * 1.15f, w - pad * 2f, u * 0.9f), "SCORE  " + score, Mathf.RoundToInt(u * 0.8f), TextAnchor.MiddleLeft, new Color(1f, 0.85f, 0.25f, 1f));
+    }
     void OnGUI() {
         GUI.depth = -500;                                  // the title screen (-1000) stays on top
         float sw = Screen.width, sh = Screen.height;
 
-        if (heartSprite != null) {
-            float size = sh * 0.07f, gap = size * 0.25f;
-            float total = maxHearts * size + (maxHearts - 1) * gap;
-            float x0 = (sw - total) / 2f, y = sh * 0.02f;
-            for (int i = 0; i < maxHearts; i++) {
-                GUI.color = (i < Hearts) ? Color.white : new Color(0f, 0f, 0f, 0.45f);   // lost hearts turn into dark shadows
-                DrawSprite(heartSprite, new Rect(x0 + i * (size + gap), y, size, size));
-            }
-            GUI.color = Color.white;
-        }
+        DrawHud(sw, sh);
 
-        if (hudStyle == null) {
-            hudStyle = new GUIStyle(GUI.skin.label);
-            hudStyle.alignment = TextAnchor.UpperRight;
-        }
-        hudStyle.fontSize = Mathf.RoundToInt(sh * 0.035f);
-        hudStyle.normal.textColor = Color.white;
-        float shown = won ? winTime : Time.timeSinceLevelLoad;
-        GUI.Label(new Rect(sw - 300f - 10f, 10f, 300f, sh * 0.06f), "Time " + Clock(shown), hudStyle);
 
         bool ending = (gameOver || won) && Time.unscaledTime >= showAt;
         if (!ending) return;

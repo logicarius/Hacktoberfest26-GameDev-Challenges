@@ -4,7 +4,6 @@ using UnityEngine;
 // Put this on the Player. Keeps the rock count and the score. Never reset on death.
 public class PlayerStats : MonoBehaviour {
     public int maxRocks = 3;
-    public bool showDebug = true;      // on-screen text until the real HUD exists (Part 5)
 
     public int Rocks { get; private set; }
     public int Score { get; private set; }
@@ -36,13 +35,5 @@ public class PlayerStats : MonoBehaviour {
         Score += points;
         if (Changed != null) Changed();
         return true;
-    }
-
-    void OnGUI() {
-        if (!showDebug) return;
-        GUIStyle style = new GUIStyle(GUI.skin.label);
-        style.fontSize = 24;
-        style.normal.textColor = Color.white;
-        GUI.Label(new Rect(10, 10, 500, 40), "Rocks: " + Rocks + "/" + maxRocks + "     Score: " + Score, style);
     }
 }
