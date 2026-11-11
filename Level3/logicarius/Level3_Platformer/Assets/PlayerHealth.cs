@@ -29,6 +29,9 @@ public class PlayerHealth : MonoBehaviour {
     float showAt, exitAt, winTime;
     GUIStyle bigStyle, smallStyle, hudStyle;
     Sprite rockIcon;
+    bool leaving;
+    float leaveAt;
+    const float LeaveTime = 0.7f;
 
     void Awake() {
         life = GetComponent<PlayerLife>();
@@ -78,7 +81,8 @@ public class PlayerHealth : MonoBehaviour {
     void Update() {
         if ((!gameOver && !won) || restarting) return;
         bool skip = Time.unscaledTime >= showAt && Input.GetKeyDown(KeyCode.Return);
-        if (skip || Time.unscaledTime >= exitAt) Restart();
+        if ((skip || Time.unscaledTime >= exitAt) && !leaving) { leaving = true; leaveAt = Time.unscaledTime; }
+        if (leaving && Time.unscaledTime - leaveAt >= LeaveTime) Restart();
     }
 
     void Restart() {
@@ -235,32 +239,32 @@ public class PlayerHealth : MonoBehaviour {
 
 
         bool ending = (gameOver || won) && Time.unscaledTime >= showAt;
-        if (!ending) return;
+        if (ending) {
+            float fin = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Time.unscaledTime - showAt) / 0.6f));
+            Color bg = won ? new Color(0.07f, 0.09f, 0.32f, 1f) : new Color(0.22f, 0.05f, 0.22f, 1f);
+            bg.a = 0.93f * fin;
+            GUI.color = bg;
+            GUI.DrawTexture(new Rect(0, 0, sw, sh), Texture2D.whiteTexture);
+            GUI.color = Color.white;
 
-        if (bigStyle == null) {
-            bigStyle = new GUIStyle(GUI.skin.label);
-            bigStyle.alignment = TextAnchor.MiddleCenter;
-            bigStyle.fontStyle = FontStyle.Bold;
-            smallStyle = new GUIStyle(GUI.skin.label);
-            smallStyle.alignment = TextAnchor.MiddleCenter;
+            Color head = won ? new Color(1f, 0.82f, 0.22f, fin) : new Color(1f, 0.42f, 0.70f, fin);
+            Color body = new Color(1f, 1f, 1f, fin);
+            int score = (stats != null) ? stats.Score : 0;
+            int big = Mathf.RoundToInt(sh * 0.13f), mid = Mathf.RoundToInt(sh * 0.04f), small = Mathf.RoundToInt(sh * 0.03f);
+            Label(new Rect(0, sh * 0.22f, sw, sh * 0.18f), won ? "YOU WIN!" : "GAME OVER", big, TextAnchor.MiddleCenter, head);
+            if (won) {
+                Label(new Rect(0, sh * 0.44f, sw, sh * 0.06f), "You reached the golden egg!", mid, TextAnchor.MiddleCenter, body);
+                Label(new Rect(0, sh * 0.52f, sw, sh * 0.06f), "Score " + score + "     Time " + Clock(winTime) + "     Hearts left " + Hearts, mid, TextAnchor.MiddleCenter, body);
+            } else {
+                Label(new Rect(0, sh * 0.46f, sw, sh * 0.07f), "Score  " + score, mid, TextAnchor.MiddleCenter, body);
+            }
+            Label(new Rect(0, sh * 0.68f, sw, sh * 0.05f), "Back to the start screen...   (Enter to skip)", small, TextAnchor.MiddleCenter, new Color(0.85f, 0.88f, 1f, fin));
         }
-        bigStyle.fontSize = Mathf.RoundToInt(sh * 0.12f);
-        bigStyle.normal.textColor = won ? new Color(1f, 0.85f, 0.25f, 1f) : new Color(1f, 0.3f, 0.2f, 1f);
-        smallStyle.fontSize = Mathf.RoundToInt(sh * 0.035f);
-        smallStyle.normal.textColor = Color.white;
 
-        GUI.color = won ? new Color(0.04f, 0.08f, 0.04f, 0.88f) : new Color(0.08f, 0.02f, 0.04f, 0.88f);
-        GUI.DrawTexture(new Rect(0, 0, sw, sh), Texture2D.whiteTexture);
-        GUI.color = Color.white;
-
-        int score = (stats != null) ? stats.Score : 0;
-        GUI.Label(new Rect(0, sh * 0.26f, sw, sh * 0.16f), won ? "YOU WIN!" : "GAME OVER", bigStyle);
-        if (won) {
-            GUI.Label(new Rect(0, sh * 0.45f, sw, sh * 0.06f), "You reached the golden egg!", smallStyle);
-            GUI.Label(new Rect(0, sh * 0.52f, sw, sh * 0.06f), "Score: " + score + "      Time: " + Clock(winTime) + "      Hearts left: " + Hearts, smallStyle);
-        } else {
-            GUI.Label(new Rect(0, sh * 0.48f, sw, sh * 0.06f), "Score: " + score, smallStyle);
-        }
-        GUI.Label(new Rect(0, sh * 0.64f, sw, sh * 0.06f), "Back to the start screen...  (Enter to skip)", smallStyle);
-    }
+        if (leaving) {                                          // fade into the title screen's colour
+            float l = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Time.unscaledTime - leaveAt) / LeaveTime));
+            GUI.color = new Color(0.12f, 0.07f, 0.30f, l);
+            GUI.DrawTexture(new Rect(0, 0, sw, sh), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+        }    }
 }
