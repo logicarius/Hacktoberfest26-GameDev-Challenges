@@ -43,9 +43,7 @@ public class TitleScreen : MonoBehaviour {
         style.fontSize = size;
         style.alignment = anchor;
         style.fontStyle = bold ? FontStyle.Bold : FontStyle.Normal;
-        style.normal.textColor = new Color(Ink.r, Ink.g, Ink.b, 0.85f * a);
-        float o = Mathf.Max(2f, size * 0.06f);
-        GUI.Label(new Rect(r.x + o, r.y + o, r.width, r.height), s, style);
+        style.wordWrap = false;
         style.normal.textColor = new Color(c.r, c.g, c.b, c.a * a);
         GUI.Label(r, s, style);
     }

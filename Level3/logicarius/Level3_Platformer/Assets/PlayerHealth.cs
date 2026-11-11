@@ -175,20 +175,19 @@ public class PlayerHealth : MonoBehaviour {
         hudStyle.fontSize = size;
         hudStyle.alignment = anchor;
         hudStyle.fontStyle = FontStyle.Bold;
-        hudStyle.normal.textColor = new Color(0f, 0f, 0f, 0.8f);          // shadow
-        GUI.Label(new Rect(r.x + 2f, r.y + 2f, r.width, r.height), text, hudStyle);
+        hudStyle.wordWrap = false;                                        // never wrap onto a second line
         hudStyle.normal.textColor = c;
         GUI.Label(r, text, hudStyle);
     }
 
     void DrawHud(float sw, float sh) {
         float u = Mathf.Max(24f, sh * 0.05f);                 // one HUD unit
-        float pad = u * 0.3f, w = u * 8.2f, h = u * 3.4f;
+        float pad = u * 0.3f, w = u * 9.6f, h = u * 3.4f;
         Rect panel = new Rect(u * 0.4f, u * 0.4f, w, h);
 
-        GUI.color = new Color(0.03f, 0.02f, 0.10f, 0.82f);    // border + dark fill
+        GUI.color = new Color(0.03f, 0.02f, 0.10f, 1f);    // border + dark fill
         GUI.DrawTexture(new Rect(panel.x - 3f, panel.y - 3f, panel.width + 6f, panel.height + 6f), Texture2D.whiteTexture);
-        GUI.color = new Color(0.12f, 0.09f, 0.28f, 0.95f);
+        GUI.color = new Color(0.14f, 0.10f, 0.32f, 1f);
         GUI.DrawTexture(panel, Texture2D.whiteTexture);
         GUI.color = Color.white;
 
@@ -223,7 +222,7 @@ public class PlayerHealth : MonoBehaviour {
         }
         GUI.color = Color.white;
         bool full = have >= max;
-        Label(new Rect(x + max * (u * 1.05f) + pad, y2, u * 4f, u), full ? "FULL: eat worms!" : "Rocks " + have + "/" + max, Mathf.RoundToInt(u * 0.55f), TextAnchor.MiddleLeft, full ? new Color(1f, 0.9f, 0.3f, 1f) : Color.white);
+        Label(new Rect(x + max * (u * 1.05f) + pad, y2, u * 5.6f, u), full ? "FULL: eat worms!" : "Rocks " + have + "/" + max, Mathf.RoundToInt(u * 0.55f), TextAnchor.MiddleLeft, full ? new Color(1f, 0.9f, 0.3f, 1f) : Color.white);
 
         Label(new Rect(panel.x, panel.yMax + 4f, w, u * 0.7f), "S / Down: drop through steps", Mathf.RoundToInt(u * 0.45f), TextAnchor.MiddleLeft, new Color(1f, 1f, 1f, 0.75f));
 
@@ -242,7 +241,7 @@ public class PlayerHealth : MonoBehaviour {
         if (ending) {
             float fin = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Time.unscaledTime - showAt) / 0.6f));
             Color bg = won ? new Color(0.07f, 0.09f, 0.32f, 1f) : new Color(0.22f, 0.05f, 0.22f, 1f);
-            bg.a = 0.93f * fin;
+            bg.a = fin;
             GUI.color = bg;
             GUI.DrawTexture(new Rect(0, 0, sw, sh), Texture2D.whiteTexture);
             GUI.color = Color.white;

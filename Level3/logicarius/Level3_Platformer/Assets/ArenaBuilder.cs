@@ -68,7 +68,9 @@ public class ArenaBuilder : MonoBehaviour {
     Transform holder, player;
     Camera cam;
     float jumpH = 1.7f, stepRise = 1.05f, hurdleH = 1f, floaterRise = 2f, tierHeight = 6.3f, ceilingY;
-    const float StairWidth = 11.4f, StepW = 2.6f, StepSpacing = 2.2f;   // 5 steps overlapping a little: 4 * 2.2 + 2.6 = 11.4
+    const int StepCount = 7;
+    const float StepW = 3.0f, StepSpacing = 1.9f;                       // wide steps that overlap by 1.1: you can walk up, hop and drop down easily
+    const float StairWidth = (StepCount - 1) * StepSpacing + StepW;     // 14.4
 
     // Makes sure the arena exists even if the Arena object was never added to the scene.
     // sceneLoaded also fires when the game reloads after WIN / GAME OVER, so the arena is rebuilt every time.
@@ -154,10 +156,10 @@ public class ArenaBuilder : MonoBehaviour {
             float g = Mathf.Abs(Physics2D.gravity.y) * (rb != null ? rb.gravityScale : 1f);
             if (g > 0.01f) jumpH = pm.jumpSpeed * pm.jumpSpeed / (2f * g);
         }
-        stepRise = Mathf.Min(1.0f, jumpH * 0.55f);          // every climb step is well inside a normal jump (easy climbing)
+        stepRise = Mathf.Min(0.8f, jumpH * 0.42f);          // every climb step is well inside a normal jump (easy climbing)
         hurdleH = Mathf.Min(1.1f, jumpH * 0.6f);
         floaterRise = hurdleH + stepRise * 0.95f;
-        tierHeight = stepRise * 6f;                        // 5 steps + the final hop onto the next floor
+        tierHeight = stepRise * (StepCount + 1);            // the steps + the final hop onto the next floor
         ceilingY = (floors - 1) * tierHeight + 9f;
     }
 
@@ -318,8 +320,8 @@ public class ArenaBuilder : MonoBehaviour {
     // five steps rising up to the trapdoor of the next floor
     void BuildStairs(float y, bool right) {
         float hl = right ? arenaWidth - StairWidth : 0f;
-        for (int i = 1; i <= 5; i++) {
-            float left = right ? hl + (5 - i) * StepSpacing : hl + (i - 1) * StepSpacing;
+        for (int i = 1; i <= StepCount; i++) {
+            float left = right ? hl + (StepCount - i) * StepSpacing : hl + (i - 1) * StepSpacing;
             float top = y + i * stepRise;
             MakeOneWay("Step", left, left + StepW, top, 0.5f, curBlock, true);
             surfaces.Add(new Surface { left = left, right = left + StepW, top = top });
